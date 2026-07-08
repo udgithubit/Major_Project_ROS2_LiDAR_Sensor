@@ -1,13 +1,15 @@
 # Localization and Mapping of Autonomous Robots using Thermal-LiDAR Fusion
-
 [![ROS2 Humble](https://img.shields.io/badge/ROS2-Humble-blue)](https://docs.ros.org/en/humble/index.html)
 [![Gazebo](https://img.shields.io/badge/Simulator-Gazebo-orange)](https://gazebosim.org/)
 [![SLAM](https://img.shields.io/badge/Algorithm-SLAM%20Toolbox-green)](https://github.com/SteveMacenski/slam_toolbox)
 
 ## 📌 Project Overview
 This repository contains the software architecture for an autonomous robotic system designed for **Simultaneous Localization and Mapping (SLAM)** in degraded visibility environments (smoke, fog, and zero-light). 
-
 By fusing **3D LiDAR point clouds** with **Infrared (Thermal) data**, the system maintains high-accuracy localization where standard visual or LiDAR sensors struggle. This research was developed at **Amity University Rajasthan**.
+
+## 📄 Publication
+This work has been published in IEEE Xplore:
+**[Localization and Mapping of Autonomous Robots using Thermal-LiDAR Fusion](https://ieeexplore.ieee.org/document/11517933)**
 
 ## 📂 Repository Structure
 - **ros_ws/**: The core ROS2 workspace containing the `my_bot` description, fusion logic nodes, and sensor configurations.
@@ -23,28 +25,23 @@ By fusing **3D LiDAR point clouds** with **Infrared (Thermal) data**, the system
 
 ## 🛠️ Setup & Installation
 1. **Clone the Repo:**
-   ```bash
-   git clone [https://github.com/muditmehta07/major-project.git](https://github.com/muditmehta07/major-project.git)
-
+```bash
+   git clone https://github.com/muditmehta07/major-project.git
 ```
 2. **Run Installer:**
 ```bash
-chmod +x install.sh
-./install.sh
-
+   chmod +x install.sh
+   ./install.sh
 ```
 3. **Build & Source:**
 ```bash
-cd ros_ws
-colcon build --symlink-install
-source install/setup.bash
-
+   cd ros_ws
+   colcon build --symlink-install
+   source install/setup.bash
 ```
 
 ## 👥 Project Contributors
-
 This project is a collaborative research effort by students of the **Department of Computer Science & Engineering, Amity University Rajasthan** (2025-26):
-
 * **Unmona Das**
 * **Ananya Pandey**
 * **Mudit Mehta**
@@ -54,9 +51,4 @@ This project is a collaborative research effort by students of the **Department 
 **Supervised by:** Dr. Sunil Pathak
 
 ## 📜 Acknowledgments
-
 Special thanks to the Amity School of Engineering & Technology (ASET) for providing the resources and guidance for this research.
-
-
-
-
