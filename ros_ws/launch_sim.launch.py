@@ -1,12 +1,20 @@
 import os
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, TimerAction
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, TimerAction
+from launch.substitutions import LaunchConfiguration
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
     package_name = 'my_bot'
+    share = get_package_share_directory(package_name)
+
+    world = DeclareLaunchArgument(
+        'world',
+        default_value=os.path.join(share, 'worlds', 'obstacle.world'),
+        description='Path to the Gazebo world file'
+    )
 
     rsp = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -19,6 +27,7 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('gazebo_ros'), 'launch', 'gazebo.launch.py')
         ),
+        launch_arguments={'world': LaunchConfiguration('world')}.items()
     )
 
     spawn_entity = TimerAction(
@@ -33,4 +42,4 @@ def generate_launch_description():
         ]
     )
 
-    return LaunchDescription([rsp, gazebo, spawn_entity])
+    return LaunchDescription([world, rsp, gazebo, spawn_entity])
