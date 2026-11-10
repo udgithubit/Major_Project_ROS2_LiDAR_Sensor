@@ -1,0 +1,158 @@
+<?xml version="1.0" ?>
+<!--
+  Step 1 of the thermal-LiDAR fusion simulation (Gazebo Fortress / ignition-gazebo6).
+  A static sensor rig (3D LiDAR + thermal camera on the same link, same pose) looks along +x at:
+    - person_a, person_b : warm cylinders (309 K, about 36 C)
+    - box_cold           : plain box at ambient temperature
+    - heater             : hot box (330 K), a thermal false positive for "human"
+  Based on the official gz-sim examples gpu_lidar_sensor.sdf and thermal_camera.sdf (ign-gazebo6).
+-->
+<sdf version="1.6">
+  <world name="thermal_lidar">
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+    <plugin filename="ignition-gazebo-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="ignition-gazebo-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="ignition-gazebo-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="ignition-gazebo-user-commands-system" name="gz::sim::systems::UserCommands"/>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <!-- Ambient air temperature (K); small gradient so the scene is not perfectly uniform -->
+    <atmosphere type="adiabatic">
+      <temperature>293</temperature>
+      <temperature_gradient>0.05</temperature_gradient>
+    </atmosphere>
+
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>30 30 0.1</size></box></geometry></collision>
+        <visual name="visual">
+          <pose>0 0 -0.05 0 0 0</pose>
+          <geometry><box><size>30 30 0.1</size></box></geometry>
+          <material><ambient>0.7 0.7 0.7 1</ambient><diffuse>0.7 0.7 0.7 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Warm people (simplified as cylinders) -->
+    <model name="person_a">
+      <static>true</static>
+      <pose>3 0.6 0.85 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><cylinder><radius>0.22</radius><length>1.7</length></cylinder></geometry></collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.22</radius><length>1.7</length></cylinder></geometry>
+          <material><ambient>0.9 0.6 0.4 1</ambient><diffuse>0.9 0.6 0.4 1</diffuse></material>
+          <plugin filename="ignition-gazebo-thermal-system" name="gz::sim::systems::Thermal">
+            <temperature>309.0</temperature>
+          </plugin>
+        </visual>
+      </link>
+    </model>
+
+    <model name="person_b">
+      <static>true</static>
+      <pose>5 -1.2 0.85 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><cylinder><radius>0.22</radius><length>1.7</length></cylinder></geometry></collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.22</radius><length>1.7</length></cylinder></geometry>
+          <material><ambient>0.9 0.6 0.4 1</ambient><diffuse>0.9 0.6 0.4 1</diffuse></material>
+          <plugin filename="ignition-gazebo-thermal-system" name="gz::sim::systems::Thermal">
+            <temperature>309.0</temperature>
+          </plugin>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Cold box: same size as a person-ish obstacle, ambient temperature -->
+    <model name="box_cold">
+      <static>true</static>
+      <pose>3.5 -0.8 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.8 0.8 1</size></box></geometry></collision>
+        <visual name="visual">
+          <geometry><box><size>0.8 0.8 1</size></box></geometry>
+          <material><ambient>0.3 0.3 0.8 1</ambient><diffuse>0.3 0.3 0.8 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Hot non-human object: a thermal false positive -->
+    <model name="heater">
+      <static>true</static>
+      <pose>2.5 -2 0.4 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.5 0.5 0.8</size></box></geometry></collision>
+        <visual name="visual">
+          <geometry><box><size>0.5 0.5 0.8</size></box></geometry>
+          <material><ambient>0.8 0.2 0.2 1</ambient><diffuse>0.8 0.2 0.2 1</diffuse></material>
+          <plugin filename="ignition-gazebo-thermal-system" name="gz::sim::systems::Thermal">
+            <temperature>330.0</temperature>
+          </plugin>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Sensor rig: 3D LiDAR + thermal camera, same link, same pose, looking along +x -->
+    <model name="sensor_rig">
+      <static>true</static>
+      <pose>0 0 0.6 0 0 0</pose>
+      <link name="rig_link">
+        <collision name="collision"><geometry><box><size>0.15 0.15 0.15</size></box></geometry></collision>
+        <visual name="visual">
+          <geometry><box><size>0.15 0.15 0.15</size></box></geometry>
+          <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+
+        <sensor name="lidar_3d" type="gpu_lidar">
+          <topic>lidar</topic>
+          <update_rate>10</update_rate>
+          <lidar>
+            <scan>
+              <horizontal>
+                <samples>640</samples>
+                <resolution>1</resolution>
+                <min_angle>-1.396263</min_angle>
+                <max_angle>1.396263</max_angle>
+              </horizontal>
+              <vertical>
+                <samples>16</samples>
+                <resolution>1</resolution>
+                <min_angle>-0.261799</min_angle>
+                <max_angle>0.261799</max_angle>
+              </vertical>
+            </scan>
+            <range><min>0.08</min><max>20.0</max><resolution>0.01</resolution></range>
+          </lidar>
+          <always_on>1</always_on>
+          <visualize>true</visualize>
+        </sensor>
+
+        <sensor name="thermal_camera" type="thermal">
+          <camera>
+            <horizontal_fov>1.047</horizontal_fov>
+            <image><width>320</width><height>240</height><format>L16</format></image>
+            <clip><near>0.1</near><far>50</far></clip>
+          </camera>
+          <always_on>1</always_on>
+          <update_rate>10</update_rate>
+          <visualize>true</visualize>
+          <topic>thermal_camera</topic>
+        </sensor>
+      </link>
+    </model>
+  </world>
+</sdf>
