@@ -7,7 +7,7 @@ Publishes:  /fusion/points (PointCloud2 with x,y,z,rgb)
   grey = ambient, blue = outside the thermal camera's field of view.
 In simulation the LiDAR and the thermal camera share the same pose, so the extrinsic is the identity.
 On real hardware this is where the calibration transform (RQ1 of the thesis) goes.
-The newest thermal image is used for each cloud (fine for the static test scene; proper time sync comes later).
+The points are first moved into the camera frame with --lidar-xyz / --lidar-rpy. The newest thermal image is used for each cloud (fine for the static test scene; proper time sync comes later).
 Run inside the course container:  python3 fusion_node.py
 """
 import argparse
@@ -15,9 +15,9 @@ import numpy as np
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image, PointCloud2, PointField
-from sensor_msgs_py import point_cloud2 as pc2
 
-from fusion_lib import classify, colorize, OUTSIDE, AMBIENT, HUMAN, HOT
+from fusion_lib import (classify, colorize, cloud_to_xyz, rotation_from_rpy, transform_points,
+                        OUTSIDE, AMBIENT, HUMAN, HOT)
 
 
 class Fusion(Node):
@@ -26,8 +26,10 @@ class Fusion(Node):
         self.a = a
         self.thermal = None
         self.pub = self.create_publisher(PointCloud2, '/fusion/points', 10)
-        self.create_subscription(Image, '/thermal_camera', self.on_thermal, 10)
-        self.create_subscription(PointCloud2, '/lidar/points', self.on_cloud, 10)
+        self.rot = rotation_from_rpy(*a.lidar_rpy)
+        self.trans = np.array(a.lidar_xyz, dtype=np.float32)
+        self.create_subscription(Image, a.thermal_topic, self.on_thermal, 10)
+        self.create_subscription(PointCloud2, a.cloud_topic, self.on_cloud, 10)
         self.last_print = 0.0
 
     def on_thermal(self, msg):
@@ -37,13 +39,11 @@ class Fusion(Node):
     def on_cloud(self, msg):
         if self.thermal is None:
             return
-        pts = pc2.read_points(msg, field_names=('x', 'y', 'z'), skip_nans=True)
-        if isinstance(pts, np.ndarray) and pts.dtype.names:
-            xyz = np.column_stack([pts['x'], pts['y'], pts['z']]).astype(np.float32)
-        else:
-            xyz = np.array([[p[0], p[1], p[2]] for p in pts], dtype=np.float32)
+        xyz = cloud_to_xyz(msg)
         if len(xyz) == 0:
             return
+        # LiDAR frame -> camera frame (the extrinsic calibration; identity in step 1/2, a rotation for the Bpearl mount)
+        xyz = transform_points(xyz, self.rot, self.trans)
         labels, temp = classify(xyz, self.thermal, self.a.hfov, self.a.kelvin_per_count,
                                 self.a.human_min_k, self.a.human_max_k)
 
@@ -52,6 +52,8 @@ class Fusion(Node):
         out['rgb'] = colorize(labels)
         cloud = PointCloud2()
         cloud.header = msg.header
+        if self.a.output_frame:
+            cloud.header.frame_id = self.a.output_frame
         cloud.height, cloud.width = 1, len(xyz)
         cloud.fields = [PointField(name=n, offset=o, datatype=PointField.FLOAT32, count=1)
                         for n, o in (('x', 0), ('y', 4), ('z', 8), ('rgb', 12))]
@@ -76,6 +78,14 @@ def main():
     ap.add_argument('--kelvin-per-count', type=float, default=0.01)
     ap.add_argument('--human-min-k', type=float, default=306.0)
     ap.add_argument('--human-max-k', type=float, default=312.0)
+    ap.add_argument('--cloud-topic', default='/lidar/points')
+    ap.add_argument('--thermal-topic', default='/thermal_camera')
+    ap.add_argument('--lidar-xyz', type=float, nargs=3, default=[0.0, 0.0, 0.0],
+                    help='LiDAR position in the camera frame (m)')
+    ap.add_argument('--lidar-rpy', type=float, nargs=3, default=[0.0, 0.0, 0.0],
+                    help='LiDAR orientation in the camera frame (rad), SDF convention')
+    ap.add_argument('--output-frame', default='',
+                    help='frame_id of /fusion/points (default: keep the input frame); use the camera/rig frame when the extrinsic is not identity')
     args, _ = ap.parse_known_args()
     rclpy.init()
     node = Fusion(args)

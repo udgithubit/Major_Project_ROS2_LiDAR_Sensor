@@ -54,3 +54,38 @@ def colorize(labels):
     for lab, (r, g, b) in COLORS.items():
         rgb[labels == lab] = (r << 16) | (g << 8) | b
     return rgb.view(np.float32)
+
+
+def rotation_from_rpy(roll, pitch, yaw):
+    """SDF/ROS convention: R = Rz(yaw) @ Ry(pitch) @ Rx(roll)."""
+    cr, sr = math.cos(roll), math.sin(roll)
+    cp, sp = math.cos(pitch), math.sin(pitch)
+    cy, sy = math.cos(yaw), math.sin(yaw)
+    rx = np.array([[1, 0, 0], [0, cr, -sr], [0, sr, cr]])
+    ry = np.array([[cp, 0, sp], [0, 1, 0], [-sp, 0, cp]])
+    rz = np.array([[cy, -sy, 0], [sy, cy, 0], [0, 0, 1]])
+    return rz @ ry @ rx
+
+
+def transform_points(xyz, rotation, translation):
+    """Express points given in the LiDAR frame in the camera frame: p_cam = R @ p_lidar + t.
+
+    (rotation, translation) is the pose of the LiDAR in the camera frame, i.e. the extrinsic calibration.
+    """
+    return (xyz @ np.asarray(rotation, dtype=np.float32).T + np.asarray(translation, dtype=np.float32)).astype(np.float32)
+
+
+_DTYPES = {1: 'i1', 2: 'u1', 3: '<i2', 4: '<u2', 5: '<i4', 6: '<u4', 7: '<f4', 8: '<f8'}
+
+
+def cloud_to_xyz(msg):
+    """Fast PointCloud2 -> (N, 3) float32 array of finite points (little-endian clouds)."""
+    dtype = np.dtype({
+        'names': [f.name for f in msg.fields],
+        'formats': [_DTYPES[f.datatype] for f in msg.fields],
+        'offsets': [f.offset for f in msg.fields],
+        'itemsize': msg.point_step,
+    })
+    arr = np.frombuffer(bytes(msg.data), dtype=dtype)
+    xyz = np.column_stack([arr['x'], arr['y'], arr['z']]).astype(np.float32)
+    return xyz[np.isfinite(xyz).all(axis=1)]
