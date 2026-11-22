@@ -84,3 +84,21 @@ def find_objects(xyz, labels, **overrides):
         d = describe(xyz, labels, idx, prm['sensor_height'])
         out.append((classify_cluster(d, prm), d))
     return out
+
+
+def shape_is_person(d, prm):
+    """LiDAR-only baseline: person-shaped (height and width), temperature ignored."""
+    return prm['person_min_height'] <= d['height'] <= prm['person_max_height'] and d['width'] <= prm['person_max_width']
+
+
+def temp_is_human(d, prm):
+    """Thermal-only baseline: enough thermal points and mostly human temperature, shape ignored."""
+    return d['n_thermal'] >= prm['min_thermal_points'] and d['frac_human'] >= prm['thermal_fraction']
+
+
+def baseline_counts(objs, **overrides):
+    """Number of objects each approach calls a person: LiDAR only, thermal only, fusion (both)."""
+    prm = dict(DEFAULTS, **overrides)
+    return dict(lidar_only=sum(shape_is_person(d, prm) for _, d in objs),
+                thermal_only=sum(temp_is_human(d, prm) for _, d in objs),
+                fusion=sum(1 for c, _ in objs if c == PERSON))

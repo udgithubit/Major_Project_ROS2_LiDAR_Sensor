@@ -16,7 +16,7 @@ from sensor_msgs.msg import PointCloud2
 from visualization_msgs.msg import Marker, MarkerArray
 
 from fusion_lib import cloud_to_xyzl
-from cluster_lib import find_objects, DEFAULTS, PERSON, WARM_OBJECT, HOT_OBJECT, OBJECT, UNKNOWN
+from cluster_lib import baseline_counts, find_objects, DEFAULTS, PERSON, WARM_OBJECT, HOT_OBJECT, OBJECT, UNKNOWN
 
 COLOR = {PERSON: (0.0, 1.0, 0.0), WARM_OBJECT: (1.0, 0.6, 0.0), HOT_OBJECT: (1.0, 0.0, 0.0),
          OBJECT: (0.6, 0.6, 0.6), UNKNOWN: (0.3, 0.3, 1.0)}
@@ -77,7 +77,8 @@ class ClusterNode(Node):
                      f"h={d['height']:.2f} w={d['width']:.2f} human={d['frac_human']:.2f} hot={d['frac_hot']:.2f}"
                      for cls, d in objs]
             counts = {k: sum(1 for c, _ in objs if c == k) for k in (PERSON, WARM_OBJECT, HOT_OBJECT, OBJECT, UNKNOWN)}
-            self.get_logger().info(f"objects={len(objs)} {counts}\n  " + "\n  ".join(lines))
+            bc = baseline_counts(objs, sensor_height=self.sensor_height)
+            self.get_logger().info(f"objects={len(objs)} {counts}\n  persons called by: {bc}\n  " + "\n  ".join(lines))
 
 
 def main():

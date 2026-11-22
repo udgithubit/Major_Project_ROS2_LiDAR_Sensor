@@ -1,7 +1,7 @@
 """Offline test of the clustering/classification logic with a synthetic scene (no ROS): python3 test_cluster_lib.py"""
 import numpy as np
 from fusion_lib import OUTSIDE, AMBIENT, HUMAN, HOT
-from cluster_lib import find_objects, PERSON, WARM_OBJECT, HOT_OBJECT, OBJECT, UNKNOWN
+from cluster_lib import baseline_counts, find_objects, PERSON, WARM_OBJECT, HOT_OBJECT, OBJECT, UNKNOWN
 
 rng = np.random.default_rng(0)
 H = 0.6   # sensor height; floor at z = -0.6
@@ -40,4 +40,8 @@ assert by_pos[(2, 0)] == WARM_OBJECT     # warm_box rejected by shape
 assert by_pos[(4, 2)] == HOT_OBJECT      # heater
 assert by_pos[(4, -1)] == OBJECT         # cold box
 assert by_pos[(2, 4)] == UNKNOWN or by_pos[(2, 5)] == UNKNOWN   # outside thermal view
+bc = baseline_counts(objs, sensor_height=H)
+print("persons called by each approach:", bc)
+# truth: 2 people. LiDAR-only also takes the cold box and the person-shaped object outside the thermal view (4); thermal-only also takes the warm box (3)
+assert bc['fusion'] == 2 and bc['thermal_only'] == 3 and bc['lidar_only'] == 4, bc
 print("ok: 2 persons, warm box rejected, heater hot, cold box object, outside-view person unknown")
