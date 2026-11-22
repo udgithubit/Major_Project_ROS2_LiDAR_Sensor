@@ -6,7 +6,7 @@
   range 0.1-30 m.  Approximations here: evenly spaced vertical angles (the real ones are unevenly spaced) and 0.4 deg
   azimuth (900 samples) to keep the simulation light; use 1800 for the real 0.2 deg.
   Mounting: the dome axis points forward (+x of the rig), so the sensor sees the half-space in front of the robot.
-  Frame check: the LiDAR is posed with pitch 90 deg in the rig, so fusion_node needs --lidar-rpy 0 1.5708 0.
+  Frame check: the LiDAR is posed with pitch 90 deg in the rig, so fusion_node needs the lidar-rpy option set to 0 1.5708 0.
   Scene: person_a, person_b (309 K), warm_box (308 K, body temperature but not human-shaped and only 0.5 m tall),
   heater (330 K), box_cold (ambient).
 -->
