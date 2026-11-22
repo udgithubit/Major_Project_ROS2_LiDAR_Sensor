@@ -13,10 +13,10 @@ DEFAULTS = dict(
     sensor_height=0.6,      # height of the rig above the floor (m); the floor is at z = -sensor_height
     ground_margin=0.15,     # points lower than floor + margin are treated as floor and dropped (m)
     cell=0.12,              # clustering grid cell in the x-y plane (m); links points closer than about 0.2 m
-    min_points=8,           # smaller clusters are ignored as noise
+    min_points=20,          # smaller clusters are ignored as noise / fragments
     min_thermal_points=5,   # need at least this many points inside the thermal view to judge temperature
     thermal_fraction=0.5,   # share of thermal points that must be human-like (or hot)
-    person_min_height=0.9, person_max_height=2.3, person_max_width=1.0,   # metres
+    person_min_height=0.9, person_max_height=2.3, person_min_width=0.15, person_max_width=1.0,   # metres
 )
 
 
@@ -68,8 +68,7 @@ def classify_cluster(d, prm):
     if d['frac_hot'] >= prm['thermal_fraction']:
         return HOT_OBJECT
     if d['frac_human'] >= prm['thermal_fraction']:
-        shape_ok = (prm['person_min_height'] <= d['height'] <= prm['person_max_height']
-                    and d['width'] <= prm['person_max_width'])
+        shape_ok = shape_is_person(d, prm)
         return PERSON if shape_ok else WARM_OBJECT        # human temperature but not person-shaped
     return OBJECT
 
@@ -88,7 +87,8 @@ def find_objects(xyz, labels, **overrides):
 
 def shape_is_person(d, prm):
     """LiDAR-only baseline: person-shaped (height and width), temperature ignored."""
-    return prm['person_min_height'] <= d['height'] <= prm['person_max_height'] and d['width'] <= prm['person_max_width']
+    return (prm['person_min_height'] <= d['height'] <= prm['person_max_height']
+            and prm['person_min_width'] <= d['width'] <= prm['person_max_width'])
 
 
 def temp_is_human(d, prm):

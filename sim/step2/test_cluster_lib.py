@@ -22,6 +22,7 @@ parts = [
     (box(2.4, 0.0, 0.4, 0.4, -H, -0.1), HUMAN),     # warm_box, 0.5 m tall, 308 K  -> must NOT be a person
     (box(4.0, 1.6, 0.5, 0.5, -H, 0.2), HOT),        # heater, 330 K
     (box(3.5, -0.8, 0.8, 0.8, -H, 0.4), AMBIENT),   # cold box
+    (cylinder(6.0, 3.0, 0.02, -H, 0.4, n=40), AMBIENT),  # thin 5 cm sliver, 1 m tall: must not count as person-shaped
     (cylinder(2.0, 4.5, 0.22, -H, 1.1), OUTSIDE),   # a person outside the thermal view -> unknown
 ]
 xyz = np.vstack([p for p, _ in parts]).astype(np.float32)
@@ -33,12 +34,13 @@ objs = find_objects(xyz, labels, sensor_height=H)
 for cls, d in sorted(objs, key=lambda o: o[1]['centroid'][0]):
     print(f"{cls:12s} at x={d['centroid'][0]:.1f} y={d['centroid'][1]:.1f}  n={d['n']:3d}  height={d['height']:.2f}  width={d['width']:.2f}  human={d['frac_human']:.2f} hot={d['frac_hot']:.2f}")
 by_pos = {(round(float(d['centroid'][0])), round(float(d['centroid'][1]))): c for c, d in objs}
-assert len(objs) == 6, len(objs)
+assert len(objs) == 7, len(objs)
 assert by_pos[(3, 1)] == PERSON          # person_a
 assert by_pos[(6, -2)] == PERSON         # person_b
 assert by_pos[(2, 0)] == WARM_OBJECT     # warm_box rejected by shape
 assert by_pos[(4, 2)] == HOT_OBJECT      # heater
 assert by_pos[(4, -1)] == OBJECT         # cold box
+assert by_pos[(6, 3)] == OBJECT          # sliver stays a plain object
 assert by_pos[(2, 4)] == UNKNOWN or by_pos[(2, 5)] == UNKNOWN   # outside thermal view
 bc = baseline_counts(objs, sensor_height=H)
 print("persons called by each approach:", bc)
