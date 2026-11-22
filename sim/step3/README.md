@@ -5,7 +5,7 @@ Offline tests of the maths: `python3 ../step2/test_fusion_lib.py`.
 
 What changed compared with step 1/2
 - LiDAR: 32 channels, vertical angles 2.3125..89.5 deg (even spacing as an approximation), 360 deg horizontal
-  at 0.4 deg (900 samples; use 1800 for the real 0.2 deg), range 0.1..30 m, 10 Hz.
+  at 1.125 deg (320 samples = 10 240 points per scan; use 1800 for the real 0.2 deg). With 900 samples the cloud arrived at only about 1 Hz on the CPU-only test laptop, range 0.1..30 m, 10 Hz.
 - The dome axis (sensor z) points along the rig's +x (forward): sensor pose pitch = 90 deg.
   The point cloud is in the LiDAR frame, so `fusion_node.py` must rotate it into the camera frame:
   `--lidar-rpy 0 1.5708 0` (this is the extrinsic calibration; on real hardware it must be estimated).
@@ -23,6 +23,6 @@ What changed compared with step 1/2
 
 ## Things to check and report back
 - Does Gazebo accept the 90 deg vertical range and 900x32 rays, and how fast does it run (real-time factor)?
-  If it is slow or crashes, lower `<samples>` of the horizontal scan to 450 and tell me.
+  If it is still slow, lower `<samples>` of the horizontal scan further (for example 240) and tell me.
 - Are the people green and the heater red as before, and is `warm_box` (308 K) green too? (It should be: that is the thermal-only false positive to fix next.)
 - Does the cloud sit in front of the rig (dome forward) and cover the floor?
