@@ -12,7 +12,12 @@ What changed compared with step 1/2
 - New test object `warm_box`: 308 K (body temperature) but only 0.5 m tall and box-shaped. Thermal alone labels it
   human-like; geometry (next step: clustering) should reject it. The heater (330 K) is the hot false positive.
 
-## Run (course container, one terminal each, one line at a time)
+## Easiest: one terminal (course container)
+`bash ~/exercises_ws/src/thermal_lidar_sim/step3/run_all.sh` starts world, bridge, transform and fusion node, prints the
+fusion counts, and Ctrl+C stops everything. (`START_THERMAL_VIEW=1 bash .../run_all.sh` also publishes `/thermal_camera/vis`.)
+Then, in a second container terminal: `source /opt/ros/humble/setup.bash && rviz2`.
+
+## Manual (one terminal each, one line at a time)
 1. `cd ~/exercises_ws/src/thermal_lidar_sim/step3 && ign gazebo -r -s bpearl_world.sdf`
 2. `ign topic -l | grep -E "bpearl|thermal"`   (expect /bpearl/points and /thermal_camera)
 3. `~/exercises_ws/src/thermal_lidar_sim/step3/run_bridge.sh`
