@@ -47,19 +47,20 @@ class Fusion(Node):
         labels, temp = classify(xyz, self.thermal, self.a.hfov, self.a.kelvin_per_count,
                                 self.a.human_min_k, self.a.human_max_k)
 
-        out = np.zeros(len(xyz), dtype=[('x', '<f4'), ('y', '<f4'), ('z', '<f4'), ('rgb', '<f4')])
+        out = np.zeros(len(xyz), dtype=[('x', '<f4'), ('y', '<f4'), ('z', '<f4'), ('rgb', '<f4'), ('label', '<f4')])
         out['x'], out['y'], out['z'] = xyz[:, 0], xyz[:, 1], xyz[:, 2]
         out['rgb'] = colorize(labels)
+        out['label'] = labels
         cloud = PointCloud2()
         cloud.header = msg.header
         if self.a.output_frame:
             cloud.header.frame_id = self.a.output_frame
         cloud.height, cloud.width = 1, len(xyz)
         cloud.fields = [PointField(name=n, offset=o, datatype=PointField.FLOAT32, count=1)
-                        for n, o in (('x', 0), ('y', 4), ('z', 8), ('rgb', 12))]
+                        for n, o in (('x', 0), ('y', 4), ('z', 8), ('rgb', 12), ('label', 16))]
         cloud.is_bigendian = False
-        cloud.point_step = 16
-        cloud.row_step = 16 * len(xyz)
+        cloud.point_step = 20
+        cloud.row_step = 20 * len(xyz)
         cloud.is_dense = True
         cloud.data = out.tobytes()
         self.pub.publish(cloud)

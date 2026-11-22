@@ -89,3 +89,17 @@ def cloud_to_xyz(msg):
     arr = np.frombuffer(bytes(msg.data), dtype=dtype)
     xyz = np.column_stack([arr['x'], arr['y'], arr['z']]).astype(np.float32)
     return xyz[np.isfinite(xyz).all(axis=1)]
+
+
+def cloud_to_xyzl(msg):
+    """PointCloud2 with x,y,z,label fields -> (xyz (N,3) float32, label (N,) uint8), finite points only."""
+    dtype = np.dtype({
+        'names': [f.name for f in msg.fields],
+        'formats': [_DTYPES[f.datatype] for f in msg.fields],
+        'offsets': [f.offset for f in msg.fields],
+        'itemsize': msg.point_step,
+    })
+    arr = np.frombuffer(bytes(msg.data), dtype=dtype)
+    xyz = np.column_stack([arr['x'], arr['y'], arr['z']]).astype(np.float32)
+    ok = np.isfinite(xyz).all(axis=1)
+    return xyz[ok], arr['label'][ok].astype(np.uint8)

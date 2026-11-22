@@ -12,7 +12,7 @@ cleanup() { trap - INT TERM EXIT; echo; echo "Stopping..."; kill "${PIDS[@]}" 2>
 trap cleanup INT TERM EXIT
 
 # remove leftovers from earlier runs so nothing is published twice
-pkill -f parameter_bridge 2>/dev/null; pkill -f "ign gazebo" 2>/dev/null; pkill -f fusion_node.py 2>/dev/null
+pkill -f parameter_bridge 2>/dev/null; pkill -f "ign gazebo" 2>/dev/null; pkill -f fusion_node.py 2>/dev/null; pkill -f cluster_node.py 2>/dev/null
 pkill -f static_transform_publisher 2>/dev/null; pkill -f thermal_view.py 2>/dev/null
 sleep 2
 
@@ -47,8 +47,12 @@ echo "[4/4] starting fusion node..."
 (cd "$STEP2" && python3 fusion_node.py --cloud-topic /bpearl/points --lidar-rpy 0 1.5708 0 --output-frame rig > "$LOG/fusion.log" 2>&1) &
 PIDS+=($!)
 
+echo "      starting object detection (clustering) node..."
+(cd "$STEP2" && python3 cluster_node.py > "$LOG/cluster.log" 2>&1) &
+PIDS+=($!)
+
 echo
 echo "Running. In another container terminal start rviz2 (Fixed Frame: map, PointCloud2 /fusion/points, Color Transformer RGB8)."
-echo "Fusion output below (Ctrl+C stops everything):"
+echo "Also add a MarkerArray display on /fusion/objects (boxes + labels). Output below (Ctrl+C stops everything):"
 sleep 3
-tail -f "$LOG/fusion.log"
+tail -f "$LOG/cluster.log" "$LOG/fusion.log"

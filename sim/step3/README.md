@@ -31,3 +31,12 @@ Then, in a second container terminal: `source /opt/ros/humble/setup.bash && rviz
   If it is still slow, lower `<samples>` of the horizontal scan further (for example 240) and tell me.
 - Are the people green and the heater red as before, and is `warm_box` (308 K) green too? (It should be: that is the thermal-only false positive to fix next.)
 - Does the cloud sit in front of the rig (dome forward) and cover the floor?
+
+## Step 3b: objects and people (cluster_node.py, started by run_all.sh)
+`cluster_node.py` groups the fused points into objects in the x-y plane (floor removed) and classifies each:
+- `person`: at least half of its thermal points are human-like (306-312 K) AND height 0.9-2.3 m AND width <= 1.0 m
+- `warm_object`: human temperature but not person-shaped (the 308 K `warm_box` must end up here)
+- `hot_object` (the heater), `object` (ambient), `unknown` (fewer than 5 points inside the thermal view)
+It logs a table every 2 s and publishes boxes + labels on `/fusion/objects` (RViz: Add -> By topic -> /fusion/objects -> MarkerArray).
+Offline test: `python3 ../step2/test_cluster_lib.py`.
+Expected in the simulation: 2 persons (person_a, person_b), warm_object (warm_box), hot_object (heater), object (cold box).
