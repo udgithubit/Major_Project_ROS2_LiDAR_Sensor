@@ -1,5 +1,15 @@
 # Demo cheat sheet (thermal-LiDAR fusion, step 3)
 
+## One command (plain WSL, prompt unmona_2@LAPTOP, Docker Desktop must say 'Engine running')
+    bash ~/Major_Project_ROS2_LiDAR_Sensor/sim/step3/start_demo.sh
+It restarts the container, starts the whole pipeline, waits (1-2 min), prints the result and opens RViz.
+Close RViz (or Ctrl+C) to stop everything. Do NOT re-copy step3 into ~/exercises_ws afterwards unless you back up your saved demo.rviz.
+
+## Show the numbers without RViz
+    docker exec robotics_essentials_ros2 bash -c "grep -A8 'persons called by' /tmp/thermal_lidar_logs/cluster.log | tail -n 9"
+
+## Manual fallback (3 steps, details below)
+
 Prerequisite (once, plain WSL `unmona_2@LAPTOP`): `git pull origin claude/dazzling-lovelace-mv0ger` and
 `cp -r sim/step1 sim/step2 sim/step3 ~/exercises_ws/src/thermal_lidar_sim/`.
 
